@@ -26,9 +26,10 @@ rm -rf ./*
 
 # files to move over
 cp -r $THIS_DIR/* ./
-
-# the lines in go.mod which start with "replace" are for local dev only
-sed '/^replace / d' < $THIS_DIR/go.mod > ./go.mod
+# go modules
+rm ./go.mod
+mv ./go.mod.public ./go.mod
+go mod download
 
 git add -A
 git commit -m "Release v${version}"

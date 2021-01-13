@@ -18,7 +18,7 @@ curl "https://raw.githubusercontent.com/org2321/reponame/master/public/sdks/envk
 
 **Install manually:**
 
-Find the [release](https://github.com/org2321/reponame/releases) for your platform and architecture, and stick the appropriate binary somewhere in your `PATH` (or wherever you like really).
+Find the [release](https://github.com/envkey/envkey-fetch/releases) for your platform and architecture, and stick the appropriate binary somewhere in your `PATH` (or wherever you like really).
 
 **Install from source:**
 

@@ -20,6 +20,7 @@ cd $PUBLIC_GO_MOD_REPO || "did you git clone go-envkeyfetch mirror?"
 pwd
 
 git checkout -b "$branch"
+git branch
 
 rm -rf ./*
 

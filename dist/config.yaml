@@ -1,0 +1,80 @@
+project_name: v2
+release:
+  github:
+    owner: envkey
+    name: v2
+  name_template: '{{.Tag}}'
+milestones:
+- repo:
+    owner: envkey
+    name: v2
+  name_template: '{{ .Tag }}'
+scoop:
+  name: v2
+  commit_author:
+    name: goreleaserbot
+    email: goreleaser@carlosbecker.com
+  commit_msg_template: Scoop update for {{ .ProjectName }} version {{ .Tag }}
+builds:
+- id: v2
+  goos:
+  - darwin
+  - linux
+  - windows
+  - freebsd
+  goarch:
+  - amd64
+  - "386"
+  goarm:
+  - "6"
+  targets:
+  - darwin_amd64
+  - linux_amd64
+  - linux_386
+  - windows_amd64
+  - windows_386
+  - freebsd_amd64
+  - freebsd_386
+  dir: .
+  main: .
+  ldflags:
+  - -s -w
+  - -extldflags "-static" -X github.com/org2321/reponame/public/sdks/envkey-fetch/version.Version={{.Env.ENVKEYFETCH_VERSION}}
+  binary: envkey-fetch
+  env:
+  - CGO_ENABLED=0
+  - GOROOT_FINAL=/usr/go
+  lang: go
+  gobinary: go
+archives:
+- id: default
+  builds:
+  - v2
+  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
+  format: tar.gz
+  files:
+  - licence*
+  - LICENCE*
+  - license*
+  - LICENSE*
+  - readme*
+  - README*
+  - changelog*
+  - CHANGELOG*
+snapshot:
+  name_template: '{{ .Tag }}-SNAPSHOT-{{ .ShortCommit }}'
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+  algorithm: sha256
+dist: dist
+env_files:
+  github_token: ~/.config/goreleaser/github_token
+  gitlab_token: ~/.config/goreleaser/gitlab_token
+  gitea_token: ~/.config/goreleaser/gitea_token
+source:
+  name_template: '{{ .ProjectName }}-{{ .Version }}'
+  format: tar.gz
+github_urls:
+  download: https://github.com
+gitlab_urls:
+  download: https://gitlab.com

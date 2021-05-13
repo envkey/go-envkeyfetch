@@ -433,36 +433,27 @@ func splitEnvkey(envkey string) (string, string, string) {
 	return envkeyIdPart, pw, envkeyHost
 }
 
-func getHost(envkeyHost string, isLocalhost bool) string {
-	var host, protocol string
+func getHost(envkeyHost string) string {
+	var host string
 	if envkeyHost == "" {
 		host = DefaultHost
 	} else {
 		host = envkeyHost
 	}
 
-	if isLocalhost {
-		protocol = "http://"
-	} else {
-		protocol = "https://"
-	}
-
-	return protocol + host
+	return "https://" + host
 }
 
 func getActionUrl(envkeyHost string) string {
-	hostSplit := strings.Split(envkeyHost, ":")
-	isLocalhost := len(hostSplit) > 0 && hostSplit[0] == "localhost"
-
-	host := getHost(envkeyHost, isLocalhost)
+	host := getHost(envkeyHost)
 
 	return host + "/action"
 }
 
-func getFetchUrlBase(envkeyHost string, envkeyIdPart string, isLocalhost bool, numEndpoint int) string {
-	host := getHost(envkeyHost, isLocalhost)
+func getFetchUrlBase(envkeyHost string, envkeyIdPart string, numEndpoint int) string {
+	host := getHost(envkeyHost)
 
-	if numEndpoint > 0 && !isLocalhost {
+	if numEndpoint > 0 {
 		re := regexp.MustCompile(`(.+?)\.(.+)`)
 		host = re.ReplaceAllString(host, ("$1-" + strconv.Itoa(numEndpoint) + ".$2"))
 	}
@@ -470,29 +461,22 @@ func getFetchUrlBase(envkeyHost string, envkeyIdPart string, isLocalhost bool, n
 	return host + "/fetch?fetchServiceVersion=" + strconv.Itoa(FetchServiceVersion) + "&envkeyIdPart=" + envkeyIdPart
 }
 
-func getJsonUrl(envkeyHost string, envkeyIdPart string, isLocalhost bool, options FetchOptions, numEndpoint int) string {
-	baseUrl := getFetchUrlBase(envkeyHost, envkeyIdPart, isLocalhost, numEndpoint)
+func getJsonUrl(envkeyHost string, envkeyIdPart string, options FetchOptions, numEndpoint int) string {
+	baseUrl := getFetchUrlBase(envkeyHost, envkeyIdPart, numEndpoint)
 	return UrlWithLoggingParams(baseUrl, options)
 }
 
 func getJson(envkeyHost string, envkeyIdPart string, options FetchOptions, response *parser.FetchResponse, fetchCache *cache.Cache) error {
-	hostSplit := strings.Split(envkeyHost, ":")
-	isLocalhost := len(hostSplit) > 0 && hostSplit[0] == "localhost"
 
 	numEndpoint := 0
-	var maxEndpoints int
-	if isLocalhost {
-		maxEndpoints = 1
-	} else {
-		maxEndpoints = NumFailovers
-	}
+	maxEndpoints := NumFailovers
 
 	var body []byte
 	var err error
 	var r *http.Response
 
 	for numEndpoint <= maxEndpoints {
-		body, r, err = getJsonBody(envkeyHost, envkeyIdPart, isLocalhost, options, numEndpoint)
+		body, r, err = getJsonBody(envkeyHost, envkeyIdPart, options, numEndpoint)
 
 		if err == nil && r.StatusCode == 200 {
 			break
@@ -583,12 +567,12 @@ func getJson(envkeyHost string, envkeyIdPart string, options FetchOptions, respo
 	return err
 }
 
-func getJsonBody(envkeyHost string, envkeyIdPart string, isLocalhost bool, options FetchOptions, numEndpoint int) ([]byte, *http.Response, error) {
+func getJsonBody(envkeyHost string, envkeyIdPart string, options FetchOptions, numEndpoint int) ([]byte, *http.Response, error) {
 	var err, fetchErr error
 	var body []byte
 	var r *http.Response
 
-	url := getJsonUrl(envkeyHost, envkeyIdPart, isLocalhost, options, numEndpoint)
+	url := getJsonUrl(envkeyHost, envkeyIdPart, options, numEndpoint)
 
 	if options.VerboseOutput {
 		fmt.Fprintf(os.Stderr, "Attempting to load encrypted config from url: %s\n", url)

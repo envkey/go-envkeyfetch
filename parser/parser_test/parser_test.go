@@ -195,12 +195,19 @@ var encryptedPrivkey = &crypto.EncryptedData{
 }
 
 var envJson = `{"GO_TEST":{"val": "it"},"GO_TEST_2":{"val": "works!"}}`
-var encryptedEnv, _ = crypto.Encrypt([]byte(envJson), pubkey, adminPrivkey)
+var envSymmetricKey = `envSymmetricKey`
+var encryptedSymmetricKey, _ = crypto.Encrypt([]byte(envSymmetricKey), pubkey, adminPrivkey)
+var encryptedEnv = crypto.EncryptSymmetric([]byte(envJson), []byte(envSymmetricKey))
+
 var envForInheritanceJson = `{"GO_TEST":{"inheritsEnvironmentId": "app1-environment1"},"GO_TEST_2":{"inheritsEnvironmentId": "app1-environment1"}}`
-var encryptedEnvForInheritance, _ = crypto.Encrypt([]byte(envForInheritanceJson), pubkey, adminPrivkey)
+var envForInheritanceSymmetricKey = `envForInheritanceSymmetricKey`
+var encryptedSymmetricKeyForInheritance, _ = crypto.Encrypt([]byte(envForInheritanceSymmetricKey), pubkey, adminPrivkey)
+var encryptedEnvForInheritance = crypto.EncryptSymmetric([]byte(envForInheritanceJson), []byte(envForInheritanceSymmetricKey))
 
 var admin2EnvJson = `{"GO_TEST":{"val": "it"},"GO_TEST_2":{"val": "works!"}}`
-var admin2EncryptedEnv, _ = crypto.Encrypt([]byte(admin2EnvJson), admin2Pubkey, keyablePrivkey)
+var admin2SymmetricKey = `admin2SymmetricKey`
+var admin2EncryptedSymmetricKey, _ = crypto.Encrypt([]byte(admin2SymmetricKey), admin2Pubkey, keyablePrivkey)
+var admin2EncryptedEnv = crypto.EncryptSymmetric([]byte(admin2EnvJson), []byte(admin2SymmetricKey))
 
 var trustedRootMap = map[string][]interface{}{
 	(ownerId): {"root", ownerPubkey, nil, ""},
@@ -248,14 +255,18 @@ var replacing2TrustChainMap = map[string][]interface{}{
 var replacing2TrustChainJson, _ = json.Marshal(replacing2TrustChainMap)
 
 var inheritanceJson = `{"GO_TEST":{"val": "it-inherits"},"GO_TEST_2":{"val": "works!-inherits"}}`
-var encryptedInheritanceOverrides, _ = crypto.Encrypt([]byte(inheritanceJson), devPubkey, keyablePrivkey)
+var inheritanceSymmetricKey = `inheritanceSymmetricKey`
+var encryptedInheritanceOverridesSymmetricKey, _ = crypto.Encrypt([]byte(inheritanceSymmetricKey), devPubkey, keyablePrivkey)
+var encryptedInheritanceOverrides = crypto.EncryptSymmetric([]byte(inheritanceJson), []byte(inheritanceSymmetricKey))
 var inheritanceOverridesEncryptedByPubkeyId = devId
 var inheritanceOverridesEncryptedByPubkey = devPubkey
 
 var inheritanceOverridesEncryptedByTrustChain = base64.StdEncoding.EncodeToString(sign.Sign([]byte{}, devTrustChainJson, devSigningPrivkey))
 
 var localsJson = `{"GO_TEST":{"val": "it-locals"},"GO_TEST_4":{"val": "works!-locals"}}`
-var encryptedLocals, _ = crypto.Encrypt([]byte(localsJson), devPubkey, keyablePrivkey)
+var localsSymmetricKey = `localsSymmetricKey`
+var encryptedLocalsSymmetricKey, _ = crypto.Encrypt([]byte(localsSymmetricKey), devPubkey, keyablePrivkey)
+var encryptedLocals = crypto.EncryptSymmetric([]byte(localsJson), []byte(localsSymmetricKey))
 var localsEncryptedByPubkeyId = devId
 var localsEncryptedByPubkey = devPubkey
 var localsEncryptedByTrustChain = &crypto.SignedData{
@@ -263,7 +274,9 @@ var localsEncryptedByTrustChain = &crypto.SignedData{
 }
 
 var subJson = `{"GO_TEST":{"val": "it-sub"},"GO_TEST_4":{"val": "works!-sub"}}`
-var encryptedSub, _ = crypto.Encrypt([]byte(subJson), devPubkey, keyablePrivkey)
+var subSymmetricKey = `subSymmetricKey`
+var encryptedSubSymmetricKey, _ = crypto.Encrypt([]byte(subSymmetricKey), devPubkey, keyablePrivkey)
+var encryptedSub = crypto.EncryptSymmetric([]byte(subJson), []byte(subSymmetricKey))
 var subEncryptedByPubkeyId = devId
 var subEncryptedByPubkey = devPubkey
 var subEncryptedByTrustChain = &crypto.SignedData{
@@ -271,7 +284,9 @@ var subEncryptedByTrustChain = &crypto.SignedData{
 }
 
 var block1Json = `{"GO_TEST_2":{"val": "works!-block1"},"GO_TEST_3":{"val": "it-block1"},"GO_TEST_4":{"val": "works!-block1"}}`
-var encryptedBlock1, _ = crypto.Encrypt([]byte(block1Json), pubkey, adminPrivkey)
+var block1SymmetricKey = `block1SymmetricKey`
+var encryptedBlock1SymmetricKey, _ = crypto.Encrypt([]byte(block1SymmetricKey), pubkey, adminPrivkey)
+var encryptedBlock1 = crypto.EncryptSymmetric([]byte(block1Json), []byte(block1SymmetricKey))
 var block1EncryptedByPubkeyId = adminId
 var block1EncryptedByPubkey = adminPubkey
 var block1EncryptedByTrustChain = &crypto.SignedData{
@@ -279,7 +294,9 @@ var block1EncryptedByTrustChain = &crypto.SignedData{
 }
 
 var block1LocalsJson = `{"GO_TEST_2":{"val": "works!-block1-locals"}, "GO_TEST_4":{"val": "works!-block1-locals"}, "GO_TEST_5":{"val": "works!-block1-locals"}}`
-var encryptedBlock1Locals, _ = crypto.Encrypt([]byte(block1LocalsJson), pubkey, adminPrivkey)
+var block1LocalsSymmetricKey = `block1LocalsSymmetricKey`
+var encryptedBlock1LocalsSymmetricKey, _ = crypto.Encrypt([]byte(block1LocalsSymmetricKey), pubkey, adminPrivkey)
+var encryptedBlock1Locals = crypto.EncryptSymmetric([]byte(block1LocalsJson), []byte(block1LocalsSymmetricKey))
 var block1LocalsEncryptedByPubkeyId = adminId
 var block1LocalsEncryptedByPubkey = adminPubkey
 var block1LocalsEncryptedByTrustChain = &crypto.SignedData{
@@ -287,9 +304,13 @@ var block1LocalsEncryptedByTrustChain = &crypto.SignedData{
 }
 
 var block2Json = `{"GO_TEST_4":{"val": "works!-block2"}}`
+var block2SymmetricKey = `block2SymmetricKey`
 var block2ForInheritanceJson = `{"GO_TEST_4":{"inheritsEnvironmentId": "block2-environment1"}}`
-var encryptedBlock2, _ = crypto.Encrypt([]byte(block2Json), devPubkey, keyablePrivkey)
-var encryptedBlock2ForInheritance, _ = crypto.Encrypt([]byte(block2ForInheritanceJson), devPubkey, keyablePrivkey)
+var block2ForInheritanceSymmetricKey = `block2ForInheritanceSymmetricKey`
+var encryptedBlock2SymmetricKey, _ = crypto.Encrypt([]byte(block2SymmetricKey), devPubkey, keyablePrivkey)
+var encryptedBlock2 = crypto.EncryptSymmetric([]byte(block2Json), []byte(block2SymmetricKey))
+var encryptedBlock2ForInheritanceSymmetricKey, _ = crypto.Encrypt([]byte(block2ForInheritanceSymmetricKey), devPubkey, keyablePrivkey)
+var encryptedBlock2ForInheritance = crypto.EncryptSymmetric([]byte(block2ForInheritanceJson), []byte(block2ForInheritanceSymmetricKey))
 var block2EncryptedByPubkeyId = devId
 var block2EncryptedByPubkey = devPubkey
 var block2EncryptedByTrustChain = &crypto.SignedData{
@@ -297,7 +318,9 @@ var block2EncryptedByTrustChain = &crypto.SignedData{
 }
 
 var block2InheritanceJson = `{"GO_TEST_4":{"val": "works!-block2-inherits"}}`
-var encryptedBlock2Inheritance, _ = crypto.Encrypt([]byte(block2InheritanceJson), devPubkey, keyablePrivkey)
+var block2InheritanceSymmetricKey = `block2InheritanceSymmetricKey`
+var encryptedBlock2InheritanceSymmetricKey, _ = crypto.Encrypt([]byte(block2InheritanceSymmetricKey), devPubkey, keyablePrivkey)
+var encryptedBlock2Inheritance = crypto.EncryptSymmetric([]byte(block2InheritanceJson), []byte(block2InheritanceSymmetricKey))
 var block2InheritanceEncryptedByPubkeyId = devId
 var block2InheritanceEncryptedByPubkey = devPubkey
 var block2InheritanceEncryptedByTrustChain = &crypto.SignedData{
@@ -305,7 +328,9 @@ var block2InheritanceEncryptedByTrustChain = &crypto.SignedData{
 }
 
 var block2SubJson = `{"GO_TEST_2": {"inheritsEnvironmentId": "block2-environment1"}, "GO_TEST_4": {"val": "works!-block2-subenv"}, "GO_TEST_5": {"val": "works!-block2-subenv"}}`
-var encryptedBlock2Sub, _ = crypto.Encrypt([]byte(block2SubJson), devPubkey, keyablePrivkey)
+var block2SubSymmetricKey = `block2SubSymmetricKey`
+var encryptedBlock2SubSymmetricKey, _ = crypto.Encrypt([]byte(block2SubSymmetricKey), devPubkey, keyablePrivkey)
+var encryptedBlock2Sub = crypto.EncryptSymmetric([]byte(block2SubJson), []byte(block2SubSymmetricKey))
 var block2SubEncryptedByPubkeyId = devId
 var block2SubEncryptedByPubkey = devPubkey
 var block2SubEncryptedByTrustChain = &crypto.SignedData{
@@ -313,7 +338,9 @@ var block2SubEncryptedByTrustChain = &crypto.SignedData{
 }
 
 var block2SubInheritanceJson = `{"GO_TEST_2":{"val": "works!-block2-inherits"}, "GO_TEST_4":{"val": "works!-block2-inherits"}}`
-var encryptedBlock2SubInheritance, _ = crypto.Encrypt([]byte(block2SubInheritanceJson), devPubkey, keyablePrivkey)
+var block2SubInheritanceSymmetricKey = `block2SubInheritanceSymmetricKey`
+var encryptedBlock2SubInheritanceSymmetricKey, _ = crypto.Encrypt([]byte(block2SubInheritanceSymmetricKey), devPubkey, keyablePrivkey)
+var encryptedBlock2SubInheritance = crypto.EncryptSymmetric([]byte(block2SubInheritanceJson), []byte(block2SubInheritanceSymmetricKey))
 var block2SubInheritanceEncryptedByPubkeyId = devId
 var block2SubInheritanceEncryptedByPubkey = devPubkey
 var block2SubInheritanceEncryptedByTrustChain = &crypto.SignedData{
@@ -324,6 +351,7 @@ var response = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnv,
+			EncryptedKey:          encryptedSymmetricKey,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
@@ -338,6 +366,7 @@ var responseWithInheritance = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnvForInheritance,
+			EncryptedKey:          encryptedSymmetricKeyForInheritance,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
@@ -345,6 +374,7 @@ var responseWithInheritance = parser.FetchResponse{
 		InheritanceOverrides: parser.InheritanceOverridesBlobs{
 			"app1-environment1": parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedInheritanceOverrides,
+				EncryptedKey:          encryptedInheritanceOverridesSymmetricKey,
 				EncryptedByPubkeyId:   devId,
 				EncryptedByPubkey:     devPubkey,
 				EncryptedByTrustChain: encryptedByDevTrustChain,
@@ -360,12 +390,14 @@ var responseWithLocals = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnv,
+			EncryptedKey:          encryptedSymmetricKey,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
 		},
 		Locals: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedLocals,
+			EncryptedKey:          encryptedLocalsSymmetricKey,
 			EncryptedByPubkeyId:   localsEncryptedByPubkeyId,
 			EncryptedByPubkey:     localsEncryptedByPubkey,
 			EncryptedByTrustChain: localsEncryptedByTrustChain,
@@ -380,12 +412,14 @@ var responseWithSub = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnv,
+			EncryptedKey:          encryptedSymmetricKey,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
 		},
 		SubEnv: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedSub,
+			EncryptedKey:          encryptedSubSymmetricKey,
 			EncryptedByPubkeyId:   subEncryptedByPubkeyId,
 			EncryptedByPubkey:     subEncryptedByPubkey,
 			EncryptedByTrustChain: subEncryptedByTrustChain,
@@ -400,6 +434,7 @@ var responseWithBlocks = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnv,
+			EncryptedKey:          encryptedSymmetricKey,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
@@ -412,6 +447,7 @@ var responseWithBlocks = parser.FetchResponse{
 		{
 			Env: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock1,
+				EncryptedKey:          encryptedBlock1SymmetricKey,
 				EncryptedByPubkeyId:   block1EncryptedByPubkeyId,
 				EncryptedByPubkey:     block1EncryptedByPubkey,
 				EncryptedByTrustChain: block1EncryptedByTrustChain,
@@ -420,6 +456,7 @@ var responseWithBlocks = parser.FetchResponse{
 		{
 			Env: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock2,
+				EncryptedKey:          encryptedBlock2SymmetricKey,
 				EncryptedByPubkeyId:   block2EncryptedByPubkeyId,
 				EncryptedByPubkey:     block2EncryptedByPubkey,
 				EncryptedByTrustChain: block2EncryptedByTrustChain,
@@ -432,6 +469,7 @@ var responseWithInheritanceAndBlocks = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnvForInheritance,
+			EncryptedKey:          encryptedSymmetricKeyForInheritance,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
@@ -439,6 +477,7 @@ var responseWithInheritanceAndBlocks = parser.FetchResponse{
 		InheritanceOverrides: parser.InheritanceOverridesBlobs{
 			"app1-environment1": parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedInheritanceOverrides,
+				EncryptedKey:          encryptedInheritanceOverridesSymmetricKey,
 				EncryptedByPubkeyId:   devId,
 				EncryptedByPubkey:     devPubkey,
 				EncryptedByTrustChain: encryptedByDevTrustChain,
@@ -452,6 +491,7 @@ var responseWithInheritanceAndBlocks = parser.FetchResponse{
 		{
 			Env: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock1,
+				EncryptedKey:          encryptedBlock1SymmetricKey,
 				EncryptedByPubkeyId:   block1EncryptedByPubkeyId,
 				EncryptedByPubkey:     block1EncryptedByPubkey,
 				EncryptedByTrustChain: block1EncryptedByTrustChain,
@@ -460,6 +500,7 @@ var responseWithInheritanceAndBlocks = parser.FetchResponse{
 		{
 			Env: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock2ForInheritance,
+				EncryptedKey:          encryptedBlock2ForInheritanceSymmetricKey,
 				EncryptedByPubkeyId:   block2EncryptedByPubkeyId,
 				EncryptedByPubkey:     block2EncryptedByPubkey,
 				EncryptedByTrustChain: block2EncryptedByTrustChain,
@@ -467,6 +508,7 @@ var responseWithInheritanceAndBlocks = parser.FetchResponse{
 			InheritanceOverrides: parser.InheritanceOverridesBlobs{
 				"block2-environment1": parser.KeyableBlobFields{
 					EncryptedEnv:          encryptedBlock2Inheritance,
+					EncryptedKey:          encryptedBlock2InheritanceSymmetricKey,
 					EncryptedByPubkeyId:   block2InheritanceEncryptedByPubkeyId,
 					EncryptedByPubkey:     block2InheritanceEncryptedByPubkey,
 					EncryptedByTrustChain: block2InheritanceEncryptedByTrustChain,
@@ -480,6 +522,7 @@ var responseWithLocalsBlocksInheritance = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnvForInheritance,
+			EncryptedKey:          encryptedSymmetricKeyForInheritance,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
@@ -487,6 +530,7 @@ var responseWithLocalsBlocksInheritance = parser.FetchResponse{
 		InheritanceOverrides: parser.InheritanceOverridesBlobs{
 			"app1-environment1": parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedInheritanceOverrides,
+				EncryptedKey:          encryptedInheritanceOverridesSymmetricKey,
 				EncryptedByPubkeyId:   devId,
 				EncryptedByPubkey:     devPubkey,
 				EncryptedByTrustChain: encryptedByDevTrustChain,
@@ -494,6 +538,7 @@ var responseWithLocalsBlocksInheritance = parser.FetchResponse{
 		},
 		Locals: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedLocals,
+			EncryptedKey:          encryptedLocalsSymmetricKey,
 			EncryptedByPubkeyId:   localsEncryptedByPubkeyId,
 			EncryptedByPubkey:     localsEncryptedByPubkey,
 			EncryptedByTrustChain: localsEncryptedByTrustChain,
@@ -506,12 +551,14 @@ var responseWithLocalsBlocksInheritance = parser.FetchResponse{
 		{
 			Env: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock1,
+				EncryptedKey:          encryptedBlock1SymmetricKey,
 				EncryptedByPubkeyId:   block1EncryptedByPubkeyId,
 				EncryptedByPubkey:     block1EncryptedByPubkey,
 				EncryptedByTrustChain: block1EncryptedByTrustChain,
 			},
 			Locals: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock1Locals,
+				EncryptedKey:          encryptedBlock1LocalsSymmetricKey,
 				EncryptedByPubkeyId:   block1LocalsEncryptedByPubkeyId,
 				EncryptedByPubkey:     block1LocalsEncryptedByPubkey,
 				EncryptedByTrustChain: block1LocalsEncryptedByTrustChain,
@@ -520,6 +567,7 @@ var responseWithLocalsBlocksInheritance = parser.FetchResponse{
 		{
 			Env: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock2ForInheritance,
+				EncryptedKey:          encryptedBlock2ForInheritanceSymmetricKey,
 				EncryptedByPubkeyId:   block2EncryptedByPubkeyId,
 				EncryptedByPubkey:     block2EncryptedByPubkey,
 				EncryptedByTrustChain: block2EncryptedByTrustChain,
@@ -527,6 +575,7 @@ var responseWithLocalsBlocksInheritance = parser.FetchResponse{
 			InheritanceOverrides: parser.InheritanceOverridesBlobs{
 				"block2-environment1": parser.KeyableBlobFields{
 					EncryptedEnv:          encryptedBlock2Inheritance,
+					EncryptedKey:          encryptedBlock2InheritanceSymmetricKey,
 					EncryptedByPubkeyId:   block2InheritanceEncryptedByPubkeyId,
 					EncryptedByPubkey:     block2InheritanceEncryptedByPubkey,
 					EncryptedByTrustChain: block2InheritanceEncryptedByTrustChain,
@@ -540,6 +589,7 @@ var responseWithSubEnvsBlocksInheritance = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnvForInheritance,
+			EncryptedKey:          encryptedSymmetricKeyForInheritance,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
@@ -547,6 +597,7 @@ var responseWithSubEnvsBlocksInheritance = parser.FetchResponse{
 		InheritanceOverrides: parser.InheritanceOverridesBlobs{
 			"app1-environment1": parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedInheritanceOverrides,
+				EncryptedKey:          encryptedInheritanceOverridesSymmetricKey,
 				EncryptedByPubkeyId:   devId,
 				EncryptedByPubkey:     devPubkey,
 				EncryptedByTrustChain: encryptedByDevTrustChain,
@@ -554,6 +605,7 @@ var responseWithSubEnvsBlocksInheritance = parser.FetchResponse{
 		},
 		SubEnv: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedSub,
+			EncryptedKey:          encryptedSubSymmetricKey,
 			EncryptedByPubkeyId:   subEncryptedByPubkeyId,
 			EncryptedByPubkey:     subEncryptedByPubkey,
 			EncryptedByTrustChain: subEncryptedByTrustChain,
@@ -566,6 +618,7 @@ var responseWithSubEnvsBlocksInheritance = parser.FetchResponse{
 		{
 			Env: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock1,
+				EncryptedKey:          encryptedBlock1SymmetricKey,
 				EncryptedByPubkeyId:   block1EncryptedByPubkeyId,
 				EncryptedByPubkey:     block1EncryptedByPubkey,
 				EncryptedByTrustChain: block1EncryptedByTrustChain,
@@ -574,12 +627,14 @@ var responseWithSubEnvsBlocksInheritance = parser.FetchResponse{
 		{
 			Env: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock2ForInheritance,
+				EncryptedKey:          encryptedBlock2ForInheritanceSymmetricKey,
 				EncryptedByPubkeyId:   block2EncryptedByPubkeyId,
 				EncryptedByPubkey:     block2EncryptedByPubkey,
 				EncryptedByTrustChain: block2EncryptedByTrustChain,
 			},
 			SubEnv: &parser.KeyableBlobFields{
 				EncryptedEnv:          encryptedBlock2Sub,
+				EncryptedKey:          encryptedBlock2SubSymmetricKey,
 				EncryptedByPubkeyId:   block2SubEncryptedByPubkeyId,
 				EncryptedByPubkey:     block2SubEncryptedByPubkey,
 				EncryptedByTrustChain: block2SubEncryptedByTrustChain,
@@ -587,6 +642,7 @@ var responseWithSubEnvsBlocksInheritance = parser.FetchResponse{
 			InheritanceOverrides: parser.InheritanceOverridesBlobs{
 				"block2-environment1": parser.KeyableBlobFields{
 					EncryptedEnv:          encryptedBlock2SubInheritance,
+					EncryptedKey:          encryptedBlock2SubInheritanceSymmetricKey,
 					EncryptedByPubkeyId:   block2SubInheritanceEncryptedByPubkeyId,
 					EncryptedByPubkey:     block2SubInheritanceEncryptedByPubkey,
 					EncryptedByTrustChain: block2SubInheritanceEncryptedByTrustChain,
@@ -600,6 +656,7 @@ var responseWithSingleRootPubkeyReplacement = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          encryptedEnv,
+			EncryptedKey:          encryptedSymmetricKey,
 			EncryptedByPubkeyId:   adminId,
 			EncryptedByPubkey:     adminPubkey,
 			EncryptedByTrustChain: encryptedByAdminTrustChain,
@@ -624,6 +681,7 @@ var responseWithMultiRootPubkeyReplacements = parser.FetchResponse{
 	KeyableBlob: &parser.KeyableBlob{
 		Env: &parser.KeyableBlobFields{
 			EncryptedEnv:          admin2EncryptedEnv,
+			EncryptedKey:          admin2EncryptedSymmetricKey,
 			EncryptedByPubkeyId:   admin2Id,
 			EncryptedByPubkey:     admin2Pubkey,
 			EncryptedByTrustChain: encryptedByAdmin2TrustChain,

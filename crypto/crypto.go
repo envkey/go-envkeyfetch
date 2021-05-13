@@ -75,6 +75,23 @@ func Encrypt(msg []byte, pubkey *Pubkey, privkey *Privkey) (*EncryptedData, erro
 	}, nil
 }
 
+func EncryptSymmetric(msg []byte, key []byte) *EncryptedData {
+	rnd := make([]byte, 24)
+	rand.Read(rnd)
+	var nonce [24]byte
+	copy(nonce[:], rnd)
+
+	// this function is only used with high entropy random keys, so we just use sha256 here to derive the key instead of a KDF
+	symmetricKey := sha256.Sum256(key)
+
+	encryptedBytes := secretbox.Seal([]byte{}, msg, &nonce, &symmetricKey)
+
+	return &EncryptedData{
+		Data:  base64.StdEncoding.EncodeToString(encryptedBytes[:]),
+		Nonce: base64.StdEncoding.EncodeToString(nonce[:]),
+	}
+}
+
 func Decrypt(encrypted *EncryptedData, pubkey *Pubkey, privkey *Privkey) ([]byte, error) {
 	nonceBytes, err := base64.StdEncoding.DecodeString(encrypted.Nonce)
 	if err != nil {
@@ -126,7 +143,7 @@ func DecryptSymmetric(encrypted *EncryptedData, key []byte) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	// this function is only used with high entropy random keys (16 character alphanemuric), so we just use sha256 here to derive the key instead of a KDF
+	// this function is only used with high entropy random keys, so we just use sha256 here to derive the key instead of a KDF
 	symmetricKey := sha256.Sum256(key)
 
 	decrypted, ok := secretbox.Open([]byte{}, encryptedBytes, &nonce, &symmetricKey)

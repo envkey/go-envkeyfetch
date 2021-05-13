@@ -4,6 +4,7 @@
 *.test
 
 envkey-fetch
+go-envkeyfetch
 .ghtoken
 dist/
 *.code-workspace

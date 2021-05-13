@@ -23,6 +23,7 @@ type KeyableRawEnv map[string]interface{}
 
 type KeyableBlobFields struct {
 	EncryptedEnv          *crypto.EncryptedData `json:"encryptedEnv"`
+	EncryptedKey          *crypto.EncryptedData `json:"encryptedKey"`
 	EncryptedByPubkeyId   string                `json:"encryptedByPubkeyId"`
 	EncryptedByPubkey     *crypto.Pubkey        `json:"encryptedByPubkey"`
 	EncryptedByTrustChain *crypto.SignedData    `json:"encryptedByTrustChain"`
@@ -33,7 +34,7 @@ type InheritanceOverrides map[string]KeyableEnv
 type InheritanceOverridesBlobs map[string]KeyableBlobFields
 
 type KeyableBlob struct {
-	Env                  *KeyableBlobFields        `json:"env"`
+	Env                  *KeyableBlobFields        `json:"env,omitempty"`
 	SubEnv               *KeyableBlobFields        `json:"subEnv,omitempty"`
 	Locals               *KeyableBlobFields        `json:"locals,omitempty"`
 	InheritanceOverrides InheritanceOverridesBlobs `json:"inheritanceOverrides,omitempty"`
@@ -184,9 +185,11 @@ func (inheritanceOverridesBlobs *InheritanceOverridesBlobs) validate() error {
 }
 
 func (blob *KeyableBlob) validate() error {
-	err := blob.Env.validate()
-	if err != nil {
-		return err
+	if blob.Env != nil {
+		err := blob.Env.validate()
+		if err != nil {
+			return err
+		}
 	}
 
 	if blob.SubEnv != nil {
@@ -222,9 +225,11 @@ func (response *FetchResponse) validate() error {
 		return errors.New("Required fields are empty.")
 	}
 
-	err := response.KeyableBlob.validate()
-	if err != nil {
-		return err
+	if response.KeyableBlob != nil {
+		err := response.KeyableBlob.validate()
+		if err != nil {
+			return err
+		}
 	}
 
 	return response.validateBlocks()
@@ -285,11 +290,13 @@ func (responseWithKeys *ResponseWithKeys) parseTrustChain() (*ResponseWithTrustC
 	var numQueued uint16
 	var numProcessed uint16
 
-	numQueued++
-	go func() {
-		keyableBlobWithTrustChains, err = responseWithKeys.Response.KeyableBlob.parseTrustChain(responseWithKeys.DecryptedPrivkey, trustedRoot)
-		resChan <- err
-	}()
+	if responseWithKeys.Response.KeyableBlob != nil {
+		numQueued++
+		go func() {
+			keyableBlobWithTrustChains, err = responseWithKeys.Response.KeyableBlob.parseTrustChain(responseWithKeys.DecryptedPrivkey, trustedRoot)
+			resChan <- err
+		}()
+	}
 
 	if len(responseWithKeys.Response.Blocks) > 0 {
 		blocksWithTrustChain = make([]*KeyableBlobWithTrustChains, len(responseWithKeys.Response.Blocks))
@@ -359,14 +366,16 @@ func (blob *KeyableBlob) parseTrustChain(decryptedPrivkey *crypto.Privkey, trust
 	var numQueued uint16
 	var numProcessed uint16
 
-	numQueued++
-	go func() {
-		envWithTrustChain, err := blob.Env.parseTrustChain(decryptedPrivkey, trustedRoot)
-		lock.Lock()
-		blobWithTrustChains.Env = envWithTrustChain
-		lock.Unlock()
-		resChan <- err
-	}()
+	if blob.Env != nil {
+		numQueued++
+		go func() {
+			envWithTrustChain, err := blob.Env.parseTrustChain(decryptedPrivkey, trustedRoot)
+			lock.Lock()
+			blobWithTrustChains.Env = envWithTrustChain
+			lock.Unlock()
+			resChan <- err
+		}()
+	}
 
 	if blob.SubEnv != nil {
 		numQueued++
@@ -404,15 +413,17 @@ func (blob *KeyableBlob) parseTrustChain(decryptedPrivkey *crypto.Privkey, trust
 		}
 	}
 
-	for {
-		err := <-resChan
-		if err == nil {
-			numProcessed++
-			if numProcessed == numQueued {
-				break
+	if numQueued > 0 {
+		for {
+			err := <-resChan
+			if err == nil {
+				numProcessed++
+				if numProcessed == numQueued {
+					break
+				}
+			} else {
+				return nil, err
 			}
-		} else {
-			return nil, err
 		}
 	}
 
@@ -424,10 +435,12 @@ func (response *ResponseWithTrustChains) verify() error {
 	var numQueued uint16
 	var numProcessed uint16
 
-	numQueued++
-	go func() {
-		resChan <- response.KeyableBlobWithTrustChains.verify()
-	}()
+	if response.KeyableBlobWithTrustChains != nil {
+		numQueued++
+		go func() {
+			resChan <- response.KeyableBlobWithTrustChains.verify()
+		}()
+	}
 
 	if len(response.BlocksWithTrustChain) > 0 {
 
@@ -439,15 +452,17 @@ func (response *ResponseWithTrustChains) verify() error {
 		}
 	}
 
-	for {
-		err := <-resChan
-		if err == nil {
-			numProcessed++
-			if numProcessed == numQueued {
-				break
+	if numQueued > 0 {
+		for {
+			err := <-resChan
+			if err == nil {
+				numProcessed++
+				if numProcessed == numQueued {
+					break
+				}
+			} else {
+				return err
 			}
-		} else {
-			return err
 		}
 	}
 
@@ -459,10 +474,12 @@ func (blob *KeyableBlobWithTrustChains) verify() error {
 	var numQueued uint16
 	var numProcessed uint16
 
-	numQueued++
-	go func() {
-		resChan <- blob.Env.verify()
-	}()
+	if blob.Env != nil {
+		numQueued++
+		go func() {
+			resChan <- blob.Env.verify()
+		}()
+	}
 
 	if blob.SubEnv != nil {
 		numQueued++
@@ -486,15 +503,17 @@ func (blob *KeyableBlobWithTrustChains) verify() error {
 		}
 	}
 
-	for {
-		err := <-resChan
-		if err == nil {
-			numProcessed++
-			if numProcessed == numQueued {
-				break
+	if numQueued > 0 {
+		for {
+			err := <-resChan
+			if err == nil {
+				numProcessed++
+				if numProcessed == numQueued {
+					break
+				}
+			} else {
+				return err
 			}
-		} else {
-			return err
 		}
 	}
 
@@ -514,31 +533,37 @@ func (blob *KeyableBlobWithTrustChains) decrypt() (*DecryptedKeyableBlob, error)
 	var numQueued uint16
 	var numProcessed uint16
 
-	numQueued++
-	go func() {
-		decrypted, err := crypto.Decrypt(
-			blob.Env.EncryptedEnv,
-			blob.Env.Signer.Pubkey,
-			blob.Env.DecryptedPrivkey,
-		)
+	if blob.Env != nil {
+		numQueued++
+		go func() {
+			decryptedKey, err := crypto.Decrypt(
+				blob.Env.EncryptedKey,
+				blob.Env.Signer.Pubkey,
+				blob.Env.DecryptedPrivkey,
+			)
 
-		if err == nil {
-			lock.Lock()
-			err = json.Unmarshal(decrypted, &decryptedKeyableBlob.Env)
-			lock.Unlock()
-		}
+			decrypted, err := crypto.DecryptSymmetric(blob.Env.EncryptedEnv, decryptedKey)
 
-		resChan <- err
-	}()
+			if err == nil {
+				lock.Lock()
+				err = json.Unmarshal(decrypted, &decryptedKeyableBlob.Env)
+				lock.Unlock()
+			}
+
+			resChan <- err
+		}()
+	}
 
 	if blob.SubEnv != nil {
 		numQueued++
 		go func() {
-			decrypted, err := crypto.Decrypt(
-				blob.SubEnv.EncryptedEnv,
+			decryptedKey, err := crypto.Decrypt(
+				blob.SubEnv.EncryptedKey,
 				blob.SubEnv.Signer.Pubkey,
 				blob.SubEnv.DecryptedPrivkey,
 			)
+
+			decrypted, err := crypto.DecryptSymmetric(blob.SubEnv.EncryptedEnv, decryptedKey)
 
 			if err == nil {
 				lock.Lock()
@@ -551,11 +576,13 @@ func (blob *KeyableBlobWithTrustChains) decrypt() (*DecryptedKeyableBlob, error)
 	} else if blob.Locals != nil {
 		numQueued++
 		go func() {
-			decrypted, err := crypto.Decrypt(
-				blob.Locals.EncryptedEnv,
+			decryptedKey, err := crypto.Decrypt(
+				blob.Locals.EncryptedKey,
 				blob.Locals.Signer.Pubkey,
 				blob.Locals.DecryptedPrivkey,
 			)
+
+			decrypted, err := crypto.DecryptSymmetric(blob.Locals.EncryptedEnv, decryptedKey)
 
 			if err == nil {
 				lock.Lock()
@@ -570,14 +597,16 @@ func (blob *KeyableBlobWithTrustChains) decrypt() (*DecryptedKeyableBlob, error)
 	if len(blob.InheritanceOverrides) > 0 {
 		decryptedKeyableBlob.InheritanceOverrides = InheritanceOverrides{}
 
-		for environmentId, blobFields := range blob.InheritanceOverrides {
+		for inheritsEnvironmentId, blobFields := range blob.InheritanceOverrides {
 			numQueued++
-			go func(environmentId string, blobFields *KeyableBlobFieldsWithTrustChain) {
-				decrypted, err := crypto.Decrypt(
-					blobFields.EncryptedEnv,
+			go func(inheritsEnvironmentId string, blobFields *KeyableBlobFieldsWithTrustChain) {
+				decryptedKey, err := crypto.Decrypt(
+					blobFields.EncryptedKey,
 					blobFields.Signer.Pubkey,
 					blobFields.DecryptedPrivkey,
 				)
+
+				decrypted, err := crypto.DecryptSymmetric(blobFields.EncryptedEnv, decryptedKey)
 
 				var overrides KeyableEnv
 
@@ -585,7 +614,7 @@ func (blob *KeyableBlobWithTrustChains) decrypt() (*DecryptedKeyableBlob, error)
 					err := json.Unmarshal(decrypted, &overrides)
 					if err == nil {
 						lock.Lock()
-						decryptedKeyableBlob.InheritanceOverrides[environmentId] = overrides
+						decryptedKeyableBlob.InheritanceOverrides[inheritsEnvironmentId] = overrides
 						lock.Unlock()
 					}
 
@@ -593,19 +622,21 @@ func (blob *KeyableBlobWithTrustChains) decrypt() (*DecryptedKeyableBlob, error)
 				} else {
 					resChan <- err
 				}
-			}(environmentId, blobFields)
+			}(inheritsEnvironmentId, blobFields)
 		}
 	}
 
-	for {
-		err := <-resChan
-		if err == nil {
-			numProcessed++
-			if numProcessed == numQueued {
-				break
+	if numQueued > 0 {
+		for {
+			err := <-resChan
+			if err == nil {
+				numProcessed++
+				if numProcessed == numQueued {
+					break
+				}
+			} else {
+				return nil, err
 			}
-		} else {
-			return nil, err
 		}
 	}
 
@@ -620,14 +651,16 @@ func (response *ResponseWithTrustChains) decrypt() (*DecryptedResponse, error) {
 	var numQueued uint16
 	var numProcessed uint16
 
-	numQueued++
-	go func() {
-		decryptedKeyableBlob, err := response.KeyableBlobWithTrustChains.decrypt()
-		lock.Lock()
-		decryptedResponse.DecryptedKeyableBlob = decryptedKeyableBlob
-		lock.Unlock()
-		resChan <- err
-	}()
+	if response.KeyableBlobWithTrustChains != nil {
+		numQueued++
+		go func() {
+			decryptedKeyableBlob, err := response.KeyableBlobWithTrustChains.decrypt()
+			lock.Lock()
+			decryptedResponse.DecryptedKeyableBlob = decryptedKeyableBlob
+			lock.Unlock()
+			resChan <- err
+		}()
+	}
 
 	if len(response.BlocksWithTrustChain) > 0 {
 		decryptedResponse.DecryptedBlocks = make([]*DecryptedKeyableBlob, len(response.BlocksWithTrustChain))
@@ -647,15 +680,17 @@ func (response *ResponseWithTrustChains) decrypt() (*DecryptedResponse, error) {
 		}
 	}
 
-	for {
-		err := <-resChan
-		if err == nil {
-			numProcessed++
-			if numProcessed == numQueued {
-				break
+	if numQueued > 0 {
+		for {
+			err := <-resChan
+			if err == nil {
+				numProcessed++
+				if numProcessed == numQueued {
+					break
+				}
+			} else {
+				return nil, err
 			}
-		} else {
-			return nil, err
 		}
 	}
 
@@ -704,16 +739,18 @@ func (response *DecryptedResponse) toMap() (map[string]interface{}, error) {
 		}
 	}
 
-	keyableEnv, keyableLocalsOrSubEnv, err := response.DecryptedKeyableBlob.toMaps()
-	if err != nil {
-		return nil, err
-	}
+	if response.DecryptedKeyableBlob != nil {
+		keyableEnv, keyableLocalsOrSubEnv, err := response.DecryptedKeyableBlob.toMaps()
+		if err != nil {
+			return nil, err
+		}
 
-	for k, v := range keyableEnv {
-		env[k] = v
-	}
-	for k, v := range keyableLocalsOrSubEnv {
-		localsOrSubEnvs[k] = v
+		for k, v := range keyableEnv {
+			env[k] = v
+		}
+		for k, v := range keyableLocalsOrSubEnv {
+			localsOrSubEnvs[k] = v
+		}
 	}
 
 	for k, v := range localsOrSubEnvs {
@@ -727,24 +764,26 @@ func (blob *DecryptedKeyableBlob) toMaps() (map[string]interface{}, map[string]i
 	env := make(map[string]interface{})
 	localsOrSubEnv := make(map[string]interface{}) // either subenv or locals
 
-	for k, v := range blob.Env {
-		if v.InheritsEnvironmentId != "" {
-			inheritedVal := v
-			for inheritedVal != nil && inheritedVal.InheritsEnvironmentId != "" {
-				inheritedEnv := blob.InheritanceOverrides[inheritedVal.InheritsEnvironmentId]
-				if inheritedEnv == nil {
-					inheritedVal = nil
-				} else {
-					inheritedVal = inheritedEnv[k]
+	if blob.Env != nil {
+		for k, v := range blob.Env {
+			if v.InheritsEnvironmentId != "" {
+				inheritedVal := v
+				for inheritedVal != nil && inheritedVal.InheritsEnvironmentId != "" {
+					inheritedEnv := blob.InheritanceOverrides[inheritedVal.InheritsEnvironmentId]
+					if inheritedEnv == nil {
+						inheritedVal = nil
+					} else {
+						inheritedVal = inheritedEnv[k]
+					}
+
+				}
+				if inheritedVal != nil {
+					env[k] = inheritedVal.Val
 				}
 
+			} else {
+				env[k] = v.Val
 			}
-			if inheritedVal != nil {
-				env[k] = inheritedVal.Val
-			}
-
-		} else {
-			env[k] = v.Val
 		}
 	}
 

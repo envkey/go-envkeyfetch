@@ -1,6 +1,13 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 
-GH_OWNER_AND_REPO=org2321/reponame
+# Overrides: ENVKEY_FETCH_BUCKET, ENVKEY_FETCH_VERSION
+
+set -e
+
+PLATFORM=
+ARCH=
+BUCKET=
+VERSION=
 
 case "$(uname -s)" in
  Darwin)
@@ -31,25 +38,43 @@ else
   ARCH="386"
 fi
 
-curl -s -o .ek_tmp_version "https://raw.githubusercontent.com/${GH_OWNER_AND_REPO}/master/releases/envkeyfetch/envkeyfetch-version.txt"
-VERSION=$(cat .ek_tmp_version)
-rm .ek_tmp_version
+# Set Bucket
+if [[ -z "${ENVKEY_FETCH_BUCKET}" ]]; then
+  BUCKET=envkey-releases
+else
+  BUCKET=$ENVKEY_FETCH_BUCKET
+  echo "Using custom bucket $BUCKET"
+fi
+
+# Set Version
+if [[ -z "${ENVKEY_FETCH_VERSION}" ]]; then
+  curl -s -o .ek_tmp_version "https://$BUCKET.s3.amazonaws.com/latest/envkeyfetch-version.txt"
+  VERSION=$(cat .ek_tmp_version)
+  rm .ek_tmp_version
+else
+  VERSION=$ENVKEY_FETCH_VERSION
+  echo "Using custom version $VERSION"
+fi
+
+cleanup () {
+  rm envkey-fetch.tar.gz
+  rm -f envkey-fetch
+  rm -f envkey-fetch.exe
+}
 
 welcome_envkey () {
   echo "envkey-fetch $VERSION Quick Install"
   echo "Copyright (c) 2021 Envkey Inc. - MIT License"
-  echo "https://github.com/$GH_OWNER_AND_REPO"
   echo ""
 }
 
 download_envkey () {
   echo "Downloading envkey-fetch binary for ${PLATFORM}-${ARCH}"
-  url="https://github.com/${GH_OWNER_AND_REPO}/releases/download/envkeyfetch-v${VERSION}/envkey-fetch_${VERSION}_${PLATFORM}_${ARCH}.tar.gz"
+  url="https://$BUCKET.s3.amazonaws.com/envkeyfetch/release_artifacts/${VERSION}/envkey-fetch_${VERSION}_${PLATFORM}_${ARCH}.tar.gz"
   echo "Downloading tarball from ${url}"
   curl -s -L -o envkey-fetch.tar.gz "${url}"
 
-  tar zxf envkey-fetch.tar.gz envkey-fetch.exe 2> /dev/null
-  tar zxf envkey-fetch.tar.gz ./envkey-fetch 2> /dev/null
+  tar zxf envkey-fetch.tar.gz 1> /dev/null
 
   if [ "$PLATFORM" == "darwin" ]; then
     mv envkey-fetch /usr/local/bin/
@@ -68,13 +93,11 @@ download_envkey () {
     fi
     echo "envkey-fetch is installed in /usr/local/bin"
   fi
-
-  rm envkey-fetch.tar.gz
-  rm -f envkey-fetch
 }
 
 welcome_envkey
 download_envkey
+cleanup
 
 echo "Installation complete. Info:"
 echo ""

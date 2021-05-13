@@ -29,6 +29,9 @@ cp -r $THIS_DIR/* ./
 # the remote repo will not have a .gitignore unless we do this
 cp -r $THIS_DIR/.gitignore ./
 # go modules
+# go.mod.public created during release_sdks.ts
+rm ./go.mod
+mv ./go.mod.public ./go.mod
 go mod download
 
 git add -A
